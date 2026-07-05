@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ssh-socks-tray"
+version = "0.1.0"
+description = "GNOME tray applet to manage multiple SSH SOCKS5 tunnels and toggle the system proxy"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Ahmed Toulan" }]
+keywords = ["ssh", "socks", "proxy", "tunnel", "gnome", "tray", "appindicator"]
+classifiers = [
+    "Environment :: X11 Applications :: GTK",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Networking",
+]
+# PyGObject + AppIndicator3 come from system packages (GObject-Introspection
+# typelibs), not PyPI — see README. Installing via pipx needs --system-site-packages.
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/thelinuxer/ssh-socks-tray"
+Issues = "https://github.com/thelinuxer/ssh-socks-tray/issues"
+
+[project.scripts]
+ssh-socks-tray = "ssh_socks_tray:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ssh_socks_tray = ["data/*"]
