@@ -1,4 +1,4 @@
-Package: ssh-socks-tray
+Package: tunly
 Version: 0.1.0
 Section: net
 Priority: optional

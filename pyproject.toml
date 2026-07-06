@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ssh-socks-tray"
+name = "tunly"
 version = "0.1.0"
 description = "GNOME tray applet to manage multiple SSH SOCKS5 tunnels and toggle the system proxy"
 readme = "README.md"
@@ -24,11 +24,11 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/thelinuxer/ssh-socks-tray"
-Issues = "https://github.com/thelinuxer/ssh-socks-tray/issues"
+Homepage = "https://github.com/thelinuxer/tunly"
+Issues = "https://github.com/thelinuxer/tunly/issues"
 
 [project.scripts]
-ssh-socks-tray = "ssh_socks_tray:main"
+tunly = "tunly:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -37,4 +37,4 @@ package-dir = { "" = "src" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-ssh_socks_tray = ["data/*"]
+tunly = ["data/*"]

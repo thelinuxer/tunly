@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SSH SOCKS Tray — manage multiple named SSH dynamic (SOCKS5) tunnels from the
+"""Tunly — manage multiple named SSH dynamic (SOCKS5) tunnels from the
 GNOME tray. Exclusive model: at most one tunnel active at a time; it drives the
 system proxy and is reverted on stop/drop/quit. Per-tunnel SSH auth: agent, key
 file, or password (keyring or prompt)."""
@@ -26,13 +26,15 @@ except (ValueError, ImportError):
     Notify = None
 from gi.repository import Gtk, GLib, Gio
 
-CONFIG_DIR = os.path.join(GLib.get_user_config_dir(), "ssh-socks-tray")
+CONFIG_DIR = os.path.join(GLib.get_user_config_dir(), "tunly")
 TUNNELS_PATH = os.path.join(CONFIG_DIR, "tunnels.json")
 LEGACY_INI = os.path.join(CONFIG_DIR, "config.ini")
+# pre-rename config location (app was "ssh-socks-tray")
+OLD_CONFIG_DIR = os.path.join(GLib.get_user_config_dir(), "ssh-socks-tray")
 
 ICON_UP = "network-transmit-receive-symbolic"
 ICON_DOWN = "network-offline-symbolic"
-KEYRING_SERVICE = "ssh-socks-tray"
+KEYRING_SERVICE = "tunly"
 
 TUNNEL_DEFAULTS = {
     "name": "", "host": "", "ssh_port": 22, "user": "",
@@ -41,8 +43,23 @@ TUNNEL_DEFAULTS = {
 
 
 # ---------------- config ----------------
+def _migrate_old_dir():
+    """Copy config from the pre-rename ssh-socks-tray dir on first run."""
+    if os.path.exists(TUNNELS_PATH) or os.path.exists(LEGACY_INI):
+        return
+    for fn in ("tunnels.json", "config.ini"):
+        src = os.path.join(OLD_CONFIG_DIR, fn)
+        if os.path.exists(src):
+            os.makedirs(CONFIG_DIR, exist_ok=True)
+            with open(src) as f:
+                data = f.read()
+            with open(os.path.join(CONFIG_DIR, fn), "w") as f:
+                f.write(data)
+
+
 def load_config():
     os.makedirs(CONFIG_DIR, exist_ok=True)
+    _migrate_old_dir()
     if os.path.exists(TUNNELS_PATH):
         with open(TUNNELS_PATH) as f:
             cfg = json.load(f)
@@ -115,7 +132,7 @@ class Manager:
     def __init__(self, headless=False):
         self.headless = headless
         if Notify and not headless:
-            Notify.init("SSH SOCKS Tray")
+            Notify.init("Tunly")
         self.cfg = load_config()
         self.proc = None
         self.active_name = None
@@ -132,7 +149,7 @@ class Manager:
             return
 
         self.ind = AppIndicator.Indicator.new(
-            "ssh-socks-tray", ICON_DOWN,
+            "tunly", ICON_DOWN,
             AppIndicator.IndicatorCategory.SYSTEM_SERVICES)
         self.ind.set_status(AppIndicator.IndicatorStatus.ACTIVE)
         self.ind.set_title("SSH SOCKS Tunnel")
@@ -615,7 +632,7 @@ def selftest():
     return 0 if ok else 1
 
 
-APP_ID = "ssh-socks-tray"
+APP_ID = "tunly"
 
 
 def _data_dir():

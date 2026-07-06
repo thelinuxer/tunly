@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=SSH SOCKS Tray
+Name=Tunly
 Comment=Manage SSH SOCKS5 tunnels and toggle the system proxy
-Exec=ssh-socks-tray
-Icon=ssh-socks-tray
+Exec=tunly
+Icon=tunly
 Terminal=false
 Categories=Network;Utility;
 Keywords=ssh;socks;proxy;tunnel;vpn;

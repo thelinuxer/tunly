@@ -10,7 +10,7 @@ make -C "$root" install DESTDIR="$stage" PREFIX=/usr
 mkdir -p "$stage/DEBIAN"
 cp "$here/control" "$stage/DEBIAN/control"
 
-out="$root/ssh-socks-tray_${ver}_all.deb"
+out="$root/tunly_${ver}_all.deb"
 dpkg-deb --build --root-owner-group "$stage" "$out"
 rm -rf "$stage"
 echo "built $out"

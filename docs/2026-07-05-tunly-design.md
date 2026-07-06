@@ -1,4 +1,4 @@
-# SSH SOCKS Tray — Design
+# Tunly — Design
 
 ## Purpose
 GNOME top-bar tray applet to manage multiple named SSH dynamic (SOCKS5) tunnels and
@@ -32,7 +32,7 @@ pointing at a dead port.
 Python 3 + GTK3 + AppIndicator3 (Ayatana fallback). All present on host; no install.
 
 ## Config
-`~/.config/ssh-socks-tray/tunnels.json` — created on first run. A legacy `config.ini`
+`~/.config/tunly/tunnels.json` — created on first run. A legacy `config.ini`
 (single-tunnel INI) is auto-migrated to a tunnel named `default`. No hardcoded values in
 code. Passwords are never written here.
 
@@ -70,10 +70,10 @@ proxy and clear active (handles ssh dying on its own). Keeps icon truthful.
 If a tunnel is active → Stop (revert proxy) first, then exit. Never leaves a stale proxy.
 
 ## Files
-- `ssh_socks_tray.py` — the applet (single file).
-- `tunnels.json` — generated under `~/.config/ssh-socks-tray/`.
+- `tunly.py` — the applet (single file).
+- `tunnels.json` — generated under `~/.config/tunly/`.
 - `askpass.sh` — generated helper for password auth (mode 0700; reads pw from env).
-- `ssh-socks-tray.desktop` — app-menu launcher (autostart optional, not enabled by default).
+- `tunly.desktop` — app-menu launcher (autostart optional, not enabled by default).
 
 ## Non-goals (v1)
 Non-exclusive concurrent proxies, per-app proxy, live IP readout in menu.

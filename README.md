@@ -1,4 +1,4 @@
-# SSH SOCKS Tray
+# Tunly
 
 GNOME tray applet to manage multiple named SSH dynamic (SOCKS5) tunnels and toggle
 the system proxy in one click. Exclusive model: at most one tunnel active at a time —
@@ -29,8 +29,8 @@ not used. Pick one:
 ### A. Debian / Ubuntu (`.deb`) — recommended for clean system integration
 
 ```bash
-make deb                 # produces ssh-socks-tray_<ver>_all.deb (needs dpkg-deb)
-sudo apt install ./ssh-socks-tray_*.deb   # pulls gir1.2-* deps automatically
+make deb                 # produces tunly_<ver>_all.deb (needs dpkg-deb)
+sudo apt install ./tunly_*.deb   # pulls gir1.2-* deps automatically
 ```
 
 ### B. pipx (any distro)
@@ -42,7 +42,7 @@ sudo apt install python3-gi gir1.2-gtk-3.0 \
      gir1.2-ayatanaappindicator3-0.1 openssh-client
 pipx install --system-site-packages .        # from a checkout
 # then, for the app menu + icon:
-ssh-socks-tray --install-desktop --autostart
+tunly --install-desktop --autostart
 ```
 
 ### C. From source (`make install`)
@@ -53,21 +53,21 @@ sudo make install PREFIX=/usr/local          # installs launcher + .desktop + ic
 
 ## Run
 
-After install, launch `ssh-socks-tray` (from the app menu or the shell). An icon appears
+After install, launch `tunly` (from the app menu or the shell). An icon appears
 in the top-bar tray (green = a tunnel is active, grey = none). Click it → per-tunnel
 start/stop, `Manage tunnels…`, `Quit`.
 
 Run in place without installing:
 
 ```bash
-PYTHONPATH=src python3 -m ssh_socks_tray &
+PYTHONPATH=src python3 -m tunly &
 ```
 
 Menu/autostart integration for a pipx or in-place run:
 
 ```bash
-ssh-socks-tray --install-desktop            # add --autostart to launch on login
-ssh-socks-tray --uninstall-desktop          # remove it
+tunly --install-desktop            # add --autostart to launch on login
+tunly --uninstall-desktop          # remove it
 ```
 
 ## Managing tunnels
@@ -86,7 +86,7 @@ unique name and its own SOCKS port.
 
 ## Config
 
-`~/.config/ssh-socks-tray/tunnels.json` — created on first run. A legacy
+`~/.config/tunly/tunnels.json` — created on first run. A legacy
 `config.ini` (single-tunnel format) is auto-migrated to tunnel `default`.
 Passwords are never written here (keyring or prompt-only).
 
@@ -97,7 +97,7 @@ your own reachable SSH server via env vars — nothing is hardcoded:
 
 ```bash
 SSTRAY_TEST_HOST=vps.example.com SSTRAY_TEST_USER=alice \
-  PYTHONPATH=src python3 -m ssh_socks_tray --selftest   # or: ssh-socks-tray --selftest
+  PYTHONPATH=src python3 -m tunly --selftest   # or: tunly --selftest
 ```
 
 ## Security notes
@@ -115,4 +115,4 @@ SSTRAY_TEST_HOST=vps.example.com SSTRAY_TEST_USER=alice \
 
 ## Design
 
-See `docs/2026-07-05-ssh-socks-tray-design.md`.
+See `docs/2026-07-05-tunly-design.md`.
