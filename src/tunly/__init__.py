@@ -136,6 +136,7 @@ class Manager:
         self.cfg = load_config()
         self.proc = None
         self.active_name = None
+        self.connecting = False
         self.saved_mode = None
 
         self.proxy = Gio.Settings.new("org.gnome.system.proxy")
@@ -230,11 +231,13 @@ class Manager:
             return
         self.saved_mode = self.proxy.get_string("mode")
         self.active_name = name
+        self.connecting = True
         try:
             self.proc = subprocess.Popen(cmd, env=env, start_new_session=True)
         except OSError as e:
             self.notify("Tunnel failed to launch", str(e))
             self.active_name = None
+            self.connecting = False
             self.refresh()
             return
         deadline = int(t["connect_timeout"]) + 2
@@ -246,15 +249,18 @@ class Manager:
     def _await_listener(self, name, remaining_ms):
         t = self.by_name(name)
         if t is None or self.active_name != name:
+            self.connecting = False
             return False
         if self.proc.poll() is not None:
             self.notify(f"{name}: failed", "ssh exited before SOCKS came up.")
             self.proc = None
             self.active_name = None
+            self.connecting = False
             self.refresh()
             return False
         if port_open("127.0.0.1", t["socks_port"]):
             self.apply_proxy(t["socks_port"])
+            self.connecting = False
             self.notify(f"{name}: UP", f"SOCKS5 127.0.0.1:{t['socks_port']}")
             self.refresh()
             return False
@@ -262,6 +268,7 @@ class Manager:
         if remaining_ms <= 0:
             self.kill_proc()
             self.active_name = None
+            self.connecting = False
             self.notify(f"{name}: timeout", "SOCKS port never opened.")
             self.refresh()
             return False
@@ -272,6 +279,7 @@ class Manager:
         self.kill_proc()
         self.revert_proxy()
         self.active_name = None
+        self.connecting = False
         self.refresh()
 
     def kill_proc(self):
@@ -302,6 +310,8 @@ class Manager:
 
     def _poll(self):
         # active ssh died on its own -> clean up + revert
+        if self.connecting:
+            return True  # _await_listener owns the connecting phase
         if self.active_name is not None:
             t = self.by_name(self.active_name)
             alive = self.proc is not None and self.proc.poll() is None \
