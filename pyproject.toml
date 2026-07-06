@@ -9,7 +9,7 @@ description = "GNOME tray applet to manage multiple SSH SOCKS5 tunnels and toggl
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
-authors = [{ name = "Ahmed Toulan" }]
+authors = [{ name = "Ahmed Toulan", email = "thelinuxer@gmail.com" }]
 keywords = ["ssh", "socks", "proxy", "tunnel", "gnome", "tray", "appindicator"]
 classifiers = [
     "Environment :: X11 Applications :: GTK",
