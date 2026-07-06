@@ -121,6 +121,21 @@ SSTRAY_TEST_HOST=vps.example.com SSTRAY_TEST_USER=alice \
 - Runs entirely as your user; it changes only your GNOME proxy settings and spawns
   `ssh`. No privileged operations, no shell interpolation of user input.
 
+## Releasing
+
+Versions are tag-driven; `pyproject.toml` is the single source of truth
+(the `.deb` version derives from it at build time). To cut a release:
+
+```bash
+# 1. bump `version` in pyproject.toml, commit
+# 2. tag and push — CI builds wheel/sdist + .deb and attaches them to a GitHub Release
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+CI fails the release if the tag and `pyproject.toml` version disagree.
+PyPI publishing is prepared in `.github/workflows/release.yml` (commented) — enable
+by configuring a trusted publisher on pypi.org and uncommenting the `pypi` job.
+
 ## Design
 
 See `docs/2026-07-05-tunly-design.md`.
