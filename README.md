@@ -1,8 +1,16 @@
-# Tunly
+<p align="center">
+  <img src="src/tunly/data/tunly.svg" alt="Tunly logo" width="160">
+</p>
+
+<h1 align="center">Tunly</h1>
+
+<p align="center"><em>Quick SSH tunnels, tidy tray.</em></p>
 
 GNOME tray applet to manage multiple named SSH dynamic (SOCKS5) tunnels and toggle
 the system proxy in one click. Exclusive model: at most one tunnel active at a time —
 it drives the system proxy and is reverted on stop, drop, or quit.
+
+**[📖 Full user guide](docs/GUIDE.md)** — first run, auth setup, troubleshooting.
 
 ## Requirements
 
