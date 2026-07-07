@@ -41,8 +41,8 @@ it drives the system proxy and is reverted on stop, drop, or quit.
 ### Quick install (Debian/Ubuntu)
 
 ```bash
-wget https://github.com/thelinuxer/tunly/releases/latest/download/tunly_0.1.1_all.deb
-sudo apt install ./tunly_0.1.1_all.deb
+wget https://github.com/thelinuxer/tunly/releases/latest/download/tunly_0.1.2_all.deb
+sudo apt install ./tunly_0.1.2_all.deb
 ```
 
 ## Requirements
