@@ -6,11 +6,34 @@
 
 <p align="center"><em>Quick SSH tunnels, tidy tray.</em></p>
 
+<p align="center">
+  <a href="https://github.com/thelinuxer/tunly/releases/latest"><img src="https://img.shields.io/github/v/release/thelinuxer/tunly" alt="Latest release"></a>
+  <a href="https://github.com/thelinuxer/tunly/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/thelinuxer/tunly/release.yml" alt="Build"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/thelinuxer/tunly" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/GNOME-GTK3-4A86CF" alt="GNOME GTK3">
+</p>
+
 GNOME tray applet to manage multiple named SSH dynamic (SOCKS5) tunnels and toggle
 the system proxy in one click. Exclusive model: at most one tunnel active at a time —
 it drives the system proxy and is reverted on stop, drop, or quit.
 
+- **One click** — pick a tunnel in the tray, ssh comes up, system proxy follows.
+- **Always reverted** — stop, crash, drop, or quit: your proxy never stays pointed
+  at a dead port.
+- **Multiple tunnels** — named profiles, each with its own host, port, and auth.
+- **Any auth** — ssh-agent, a specific key file, or password (GNOME keyring / prompt;
+  never written to disk).
+- **Self-healing** — health-checks the tunnel and cleans up if ssh dies underneath.
+- **No daemons, no root** — a single Python/GTK process running as you.
+
 **[📖 Full user guide](docs/GUIDE.md)** — first run, auth setup, troubleshooting.
+
+### Quick install (Debian/Ubuntu)
+
+```bash
+wget https://github.com/thelinuxer/tunly/releases/latest/download/tunly_0.1.0_all.deb
+sudo apt install ./tunly_0.1.0_all.deb
+```
 
 ## Requirements
 
@@ -127,7 +150,7 @@ Versions are tag-driven; `pyproject.toml` is the single source of truth
 (the `.deb` version derives from it at build time). To cut a release:
 
 ```bash
-# 1. bump `version` in pyproject.toml, commit
+# 1. bump `version` in pyproject.toml (and the Quick install URL above), commit
 # 2. tag and push — CI builds wheel/sdist + .deb and attaches them to a GitHub Release
 git tag v0.2.0 && git push origin v0.2.0
 ```
