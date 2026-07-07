@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/docs/logo.png" alt="Tunly logo" width="160">
+  <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/src/tunly/data/tunly.svg" alt="Tunly logo" width="160">
 </p>
 
 <h1 align="center">Tunly</h1>
