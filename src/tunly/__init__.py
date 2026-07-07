@@ -153,7 +153,7 @@ class Manager:
             "tunly", ICON_DOWN,
             AppIndicator.IndicatorCategory.SYSTEM_SERVICES)
         self.ind.set_status(AppIndicator.IndicatorStatus.ACTIVE)
-        self.ind.set_title("SSH SOCKS Tunnel")
+        self.ind.set_title("Tunly")
         self.menu = Gtk.Menu()
         self.ind.set_menu(self.menu)
         self.refresh()
@@ -372,7 +372,7 @@ class Manager:
         self._refresh_window()
 
     def _build_window(self):
-        self.window = Gtk.Window(title="SSH SOCKS Tunnels")
+        self.window = Gtk.Window(title="Tunly")
         self.window.set_default_size(620, 320)
         self.window.set_border_width(8)
         self.window.connect("delete-event", lambda *a: self.window.hide() or True)

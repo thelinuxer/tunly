@@ -28,6 +28,15 @@ it drives the system proxy and is reverted on stop, drop, or quit.
 
 **[📖 Full user guide](docs/GUIDE.md)** — first run, auth setup, troubleshooting.
 
+<p align="center">
+  <img src="docs/screenshots/manager.png" alt="Tunnel manager window" width="520">
+  &nbsp;
+  <img src="docs/screenshots/add-tunnel.png" alt="Add tunnel dialog" width="250">
+</p>
+<p align="center">
+  <img src="docs/screenshots/tray-menu.png" alt="Tray menu" width="260">
+</p>
+
 ### Quick install (Debian/Ubuntu)
 
 ```bash
