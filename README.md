@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/tunly/data/tunly.svg" alt="Tunly logo" width="160">
+  <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/src/tunly/data/tunly.svg" alt="Tunly logo" width="160">
 </p>
 
 <h1 align="center">Tunly</h1>
@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/thelinuxer/tunly/releases/latest"><img src="https://img.shields.io/github/v/release/thelinuxer/tunly" alt="Latest release"></a>
-  <a href="https://github.com/thelinuxer/tunly/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/thelinuxer/tunly/release.yml" alt="Build"></a>
+  <a href="https://github.com/thelinuxer/tunly/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/thelinuxer/tunly/ci.yml?branch=master&label=ci" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/thelinuxer/tunly" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/GNOME-GTK3-4A86CF" alt="GNOME GTK3">
 </p>
@@ -29,19 +29,19 @@ it drives the system proxy and is reverted on stop, drop, or quit.
 **[📖 Full user guide](docs/GUIDE.md)** — first run, auth setup, troubleshooting.
 
 <p align="center">
-  <img src="docs/screenshots/manager.png" alt="Tunnel manager window" width="520">
+  <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/docs/screenshots/manager.png" alt="Tunnel manager window" width="520">
   &nbsp;
-  <img src="docs/screenshots/add-tunnel.png" alt="Add tunnel dialog" width="250">
+  <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/docs/screenshots/add-tunnel.png" alt="Add tunnel dialog" width="250">
 </p>
 <p align="center">
-  <img src="docs/screenshots/tray-menu.png" alt="Tray menu" width="260">
+  <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/docs/screenshots/tray-menu.png" alt="Tray menu" width="260">
 </p>
 
 ### Quick install (Debian/Ubuntu)
 
 ```bash
-wget https://github.com/thelinuxer/tunly/releases/latest/download/tunly_0.1.0_all.deb
-sudo apt install ./tunly_0.1.0_all.deb
+wget https://github.com/thelinuxer/tunly/releases/latest/download/tunly_0.1.1_all.deb
+sudo apt install ./tunly_0.1.1_all.deb
 ```
 
 ## Requirements
@@ -85,7 +85,15 @@ pipx install --system-site-packages .        # from a checkout
 tunly --install-desktop --autostart
 ```
 
-### C. From source (`make install`)
+### C. Arch Linux
+
+A `PKGBUILD` ships in `packaging/aur/`:
+
+```bash
+cd packaging/aur && makepkg -si
+```
+
+### D. From source (`make install`)
 
 ```bash
 sudo make install PREFIX=/usr/local          # installs launcher + .desktop + icon
@@ -165,8 +173,14 @@ git tag v0.2.0 && git push origin v0.2.0
 ```
 
 CI fails the release if the tag and `pyproject.toml` version disagree.
-PyPI publishing is prepared in `.github/workflows/release.yml` (commented) — enable
-by configuring a trusted publisher on pypi.org and uncommenting the `pypi` job.
+Unit tests run on every push (`.github/workflows/ci.yml`); live SSH integration
+tests run locally with `SSTRAY_TEST_HOST=<server> pytest tests/`.
+
+**Enabling PyPI publishing** (one-time): on pypi.org → *Publishing* → add a trusted
+publisher with repository `thelinuxer/tunly`, workflow `release.yml`, environment
+`pypi`; create a matching `pypi` environment in the GitHub repo settings; then
+uncomment the `pypi` job in `.github/workflows/release.yml`. After that every tagged
+release also lands on PyPI (`pipx install tunly`).
 
 ## Design
 

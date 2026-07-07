@@ -1,0 +1,30 @@
+# Maintainer: Ahmed Toulan <thelinuxer@gmail.com>
+pkgname=tunly
+pkgver=0.1.1
+pkgrel=1
+pkgdesc="GNOME tray applet for SSH SOCKS5 tunnels — one click up, system proxy follows"
+arch=('any')
+url="https://github.com/thelinuxer/tunly"
+license=('MIT')
+depends=('python' 'python-gobject' 'gtk3' 'libayatana-appindicator' 'openssh')
+optdepends=('libnotify: desktop notifications'
+            'libsecret: remember passwords in the keyring'
+            'sshpass: alternative password delivery')
+makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/thelinuxer/tunly/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  python -m build --wheel --no-isolation
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  python -m installer --destdir="$pkgdir" dist/*.whl
+  install -Dm644 src/tunly/data/tunly.desktop \
+    "$pkgdir/usr/share/applications/tunly.desktop"
+  install -Dm644 src/tunly/data/tunly.svg \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/tunly.svg"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

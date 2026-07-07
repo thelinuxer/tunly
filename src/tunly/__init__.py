@@ -226,6 +226,10 @@ class Manager:
             return
         if self.proc is not None and self.proc.poll() is None:
             self.stop()  # exclusive: drop current first
+        if port_open("127.0.0.1", t["socks_port"]):
+            self.notify(f"{name}: port busy",
+                        f"Something already listens on 127.0.0.1:{t['socks_port']}.")
+            return
         cmd, env = self._build(t)
         if cmd is None:
             return
