@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/src/tunly/data/tunly.svg" alt="Tunly logo" width="160">
+  <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/docs/logo.png" alt="Tunly logo" width="160">
 </p>
 
 <h1 align="center">Tunly</h1>
@@ -41,8 +41,8 @@ it drives the system proxy and is reverted on stop, drop, or quit.
 ### Quick install (Debian/Ubuntu)
 
 ```bash
-wget https://github.com/thelinuxer/tunly/releases/latest/download/tunly_0.1.2_all.deb
-sudo apt install ./tunly_0.1.2_all.deb
+wget https://github.com/thelinuxer/tunly/releases/latest/download/tunly_0.1.3_all.deb
+sudo apt install ./tunly_0.1.3_all.deb
 ```
 
 ## Requirements
