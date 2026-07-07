@@ -1,6 +1,6 @@
 # Maintainer: Ahmed Toulan <thelinuxer@gmail.com>
 pkgname=tunly
-pkgver=0.1.3
+pkgver=0.1.4
 pkgrel=1
 pkgdesc="GNOME tray applet for SSH SOCKS5 tunnels — one click up, system proxy follows"
 arch=('any')
