@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/thelinuxer/tunly/releases/latest"><img src="https://img.shields.io/github/v/release/thelinuxer/tunly" alt="Latest release"></a>
+  <a href="https://pypi.org/project/tunly/"><img src="https://img.shields.io/pypi/v/tunly" alt="PyPI"></a>
   <a href="https://github.com/thelinuxer/tunly/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/thelinuxer/tunly/ci.yml?branch=master&label=ci" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/thelinuxer/tunly" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/GNOME-GTK3-4A86CF" alt="GNOME GTK3">
@@ -80,7 +81,7 @@ Because AppIndicator has no PyPI package, the venv must see the system bindings:
 ```bash
 sudo apt install python3-gi gir1.2-gtk-3.0 \
      gir1.2-ayatanaappindicator3-0.1 openssh-client
-pipx install --system-site-packages .        # from a checkout
+pipx install --system-site-packages tunly   # from PyPI (or "." from a checkout)
 # then, for the app menu + icon:
 tunly --install-desktop --autostart
 ```
