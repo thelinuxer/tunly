@@ -38,6 +38,32 @@ it drives the system proxy and is reverted on stop, drop, or quit.
   <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/docs/screenshots/tray-menu.png" alt="Tray menu" width="260">
 </p>
 
+## You need an SSH server
+
+Tunly is a **client**. It doesn't provide servers — it tunnels your traffic
+through an SSH server **you** control and then out to the internet, so your exit
+IP becomes that server's IP. You need a Linux box you can SSH into with outbound
+internet; almost any small VPS works (the tunnel only needs `sshd` + bandwidth —
+no special software on the server).
+
+Create a small Linux VM, note its public IP, and you're the `root`/sudo user.
+Popular options (prices/tiers change — verify before signing up):
+
+| Provider | Cheapest | Free tier | Notes |
+|---|---|---|---|
+| **Oracle Cloud** | — | **Always Free**: up to 4 Arm (Ampere) cores + 24 GB, or 2 AMD micro VMs, free forever | Best free option; signup asks for a card |
+| **Google Cloud** | — | 1× `e2-micro`/month free in select US regions | Free-tier VM is enough for a tunnel |
+| **AWS** | Lightsail ~$3.50/mo | EC2 `t3.micro` free for 12 months | Lightsail is the simplest AWS path |
+| **Hetzner Cloud** | ~€4/mo (CX22) | — | Cheapest reliable paid VPS; EU + US regions |
+| **Vultr** | ~$2.50–5/mo | — | Many regions, hourly billing |
+| **DigitalOcean** | $4/mo droplet | Signup credit (often $200/60 days) | Beginner-friendly |
+| **Linode (Akamai)** | $5/mo | Signup credit | Simple, well-documented |
+| **Fly.io** | small VMs, usage-based | limited free allowance | Container-style, quick to spin up |
+
+Then: add your key with `ssh-copy-id user@SERVER_IP`, open **Manage tunnels…**,
+add a tunnel with that host/user/auth, and pick it from the tray. Harden the box
+with key-only auth (`PasswordAuthentication no`) and a firewall on port 22.
+
 ### Quick install (Debian/Ubuntu)
 
 ```bash
