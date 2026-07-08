@@ -357,6 +357,9 @@ class Manager:
         mgr = Gtk.MenuItem(label="Manage tunnels…")
         mgr.connect("activate", lambda _: self.show_window())
         self.menu.append(mgr)
+        about = Gtk.MenuItem(label="About")
+        about.connect("activate", self.show_about)
+        self.menu.append(about)
         self.menu.append(Gtk.SeparatorMenuItem())
         q = Gtk.MenuItem(label="Quit")
         q.connect("activate", self.on_quit)
@@ -366,6 +369,32 @@ class Manager:
 
     def _on_tray_toggle(self, _, name):
         self.stop() if self.is_active(name) else self.start(name)
+
+    def show_about(self, *_):
+        d = Gtk.AboutDialog(transient_for=self.window, modal=True)
+        d.set_program_name("Tunly")
+        try:
+            from importlib.metadata import version
+            d.set_version(version("tunly"))
+        except Exception:
+            pass
+        d.set_comments(
+            "Quick SSH tunnels, tidy tray.\n\n"
+            "Routes your traffic through an SSH server you control (SOCKS5) and "
+            "drives the system proxy. Needs a Linux box you can SSH into — see "
+            "the README for provider options.")
+        d.set_website("https://github.com/thelinuxer/tunly")
+        d.set_website_label("github.com/thelinuxer/tunly")
+        d.set_license_type(Gtk.License.MIT_X11)
+        d.set_copyright("© 2026 Ahmed Toulan")
+        try:
+            from gi.repository import GdkPixbuf
+            svg = str(_data_dir().joinpath("tunly.svg"))
+            d.set_logo(GdkPixbuf.Pixbuf.new_from_file_at_size(svg, 96, 96))
+        except Exception:
+            d.set_logo_icon_name("tunly")
+        d.run()
+        d.destroy()
 
     # ---- UI: manager window ----
     def show_window(self):
