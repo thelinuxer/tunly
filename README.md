@@ -29,6 +29,9 @@ it drives the system proxy and is reverted on stop, drop, or quit.
 
 **[📖 Full user guide](docs/GUIDE.md)** — first run, auth setup, troubleshooting.
 
+**📱 On Android?** See **[Tunly Mobile](https://github.com/thelinuxer/tunly-mobile)** —
+the same named SSH tunnels, routing your whole device through a `VpnService`.
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/thelinuxer/tunly/master/docs/screenshots/manager.png" alt="Tunnel manager window" width="520">
   &nbsp;
