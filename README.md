@@ -51,7 +51,6 @@ Popular options (prices/tiers change — verify before signing up):
 
 | Provider | Cheapest | Free tier | Notes |
 |---|---|---|---|
-| **Oracle Cloud** | — | **Always Free**: up to 4 Arm (Ampere) cores + 24 GB, or 2 AMD micro VMs, free forever | Best free option; signup asks for a card |
 | **Google Cloud** | — | 1× `e2-micro`/month free in select US regions | Free-tier VM is enough for a tunnel |
 | **AWS** | Lightsail ~$3.50/mo | EC2 `t3.micro` free for 12 months | Lightsail is the simplest AWS path |
 | **Hetzner Cloud** | ~€4/mo (CX22) | — | Cheapest reliable paid VPS; EU + US regions |
