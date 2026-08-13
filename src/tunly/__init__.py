@@ -26,6 +26,8 @@ except (ValueError, ImportError):
     Notify = None
 from gi.repository import Gtk, GLib, Gio
 
+from .routing import ProxyBackend, TransparentBackend, repair
+
 CONFIG_DIR = os.path.join(GLib.get_user_config_dir(), "tunly")
 TUNNELS_PATH = os.path.join(CONFIG_DIR, "tunnels.json")
 LEGACY_INI = os.path.join(CONFIG_DIR, "config.ini")
@@ -39,6 +41,13 @@ KEYRING_SERVICE = "tunly"
 TUNNEL_DEFAULTS = {
     "name": "", "host": "", "ssh_port": 22, "user": "",
     "socks_port": 1080, "connect_timeout": 5, "auth": "agent", "key_path": "",
+}
+
+# Transparent mode is global, not per-tunnel: one active tunnel at a time.
+CONFIG_DEFAULTS = {
+    "poll_seconds": 3,
+    "transparent": False,
+    "dns_server": "1.1.1.1",
 }
 
 
@@ -77,7 +86,8 @@ def load_config():
         save_config(cfg)
     else:
         cfg = {"poll_seconds": 3, "tunnels": []}
-    cfg.setdefault("poll_seconds", 3)
+    for k, v in CONFIG_DEFAULTS.items():
+        cfg.setdefault(k, v)
     cfg.setdefault("tunnels", [])
     for t in cfg["tunnels"]:
         for k, v in TUNNEL_DEFAULTS.items():
@@ -139,12 +149,16 @@ class Manager:
         self.connecting = False
         self.saved_mode = None
 
-        self.proxy = Gio.Settings.new("org.gnome.system.proxy")
-        self.proxy_socks = Gio.Settings.new("org.gnome.system.proxy.socks")
-        self.proxy_http = Gio.Settings.new("org.gnome.system.proxy.http")
+        self.proxy_backend = ProxyBackend()
+        self.routing = None
+        # gsettings handles stay exposed: selftest and callers still read them
+        self.proxy = self.proxy_backend.proxy
+        self.proxy_socks = self.proxy_backend.proxy_socks
+        self.proxy_http = self.proxy_backend.proxy_http
 
         self.window = None
         self.rows_box = None
+        self.dns_entry = None
         if headless:
             self.ind = self.menu = None
             return
@@ -233,7 +247,6 @@ class Manager:
         cmd, env = self._build(t)
         if cmd is None:
             return
-        self.saved_mode = self.proxy.get_string("mode")
         self.active_name = name
         self.connecting = True
         try:
@@ -265,7 +278,12 @@ class Manager:
         if port_open("127.0.0.1", t["socks_port"]):
             self.apply_proxy(t["socks_port"])
             self.connecting = False
-            self.notify(f"{name}: UP", f"SOCKS5 127.0.0.1:{t['socks_port']}")
+            body = f"SOCKS5 127.0.0.1:{t['socks_port']}"
+            if self.routing is not None and self.routing.name == "transparent":
+                # ping failing is the kill switch, not a broken network
+                body += "\nTransparent: all TCP captured. ping and UDP are " \
+                        "blocked by design."
+            self.notify(f"{name}: UP", body)
             self.refresh()
             return False
         remaining_ms -= 400
@@ -280,6 +298,7 @@ class Manager:
         return False
 
     def stop(self):
+        self.log(f"STOP requested for {self.active_name}")
         self.kill_proc()
         self.revert_proxy()
         self.active_name = None
@@ -300,19 +319,53 @@ class Manager:
             pass
         self.proc = None
 
+    def log_health(self):
+        ok = self.routing.health()
+        if not ok:
+            self.log("HEALTH FAILED — see ~/.cache/tunly-netguard.log")
+        return ok
+
+    def _make_backend(self):
+        """Transparent when the global toggle is on and we know the tunnel."""
+        t = self.by_name(self.active_name) if self.active_name else None
+        if self.cfg.get("transparent") and t is not None:
+            return TransparentBackend(t["host"], t["ssh_port"],
+                                      self.cfg.get("dns_server", ""))
+        return self.proxy_backend
+
     def apply_proxy(self, port):
-        self.proxy_socks.set_string("host", "127.0.0.1")
-        self.proxy_socks.set_int("port", port)
-        self.proxy_http.set_string("host", "")
-        self.proxy_http.set_int("port", 0)
-        self.proxy.set_string("mode", "manual")
+        backend = self._make_backend()
+        try:
+            backend.up(port)
+        except Exception as e:
+            if backend is self.proxy_backend:
+                raise
+            # all-or-nothing: rules already rolled back, degrade to proxy mode
+            self.notify("Transparent mode failed",
+                        f"{e}\nFell back to proxy mode.")
+            backend = self.proxy_backend
+            backend.up(port)
+        self.routing = backend
 
     def revert_proxy(self):
-        self.proxy.set_string("mode", self.saved_mode or "none")
-        self.proxy_socks.set_string("host", "")
-        self.proxy_socks.set_int("port", 0)
+        if self.routing is None:
+            return
+        try:
+            self.routing.down()
+        except Exception as e:
+            self.notify("Cleanup problem", f"{e}\nTry: tunly --repair")
+        self.routing = None
 
     def _poll(self):
+        # Never let an exception escape: GLib drops the source on error, which
+        # would silently end all monitoring — no drop detection, no teardown.
+        try:
+            return self._poll_once()
+        except Exception as e:
+            self.notify("Monitoring error", f"{e}\nIf traffic stops: tunly --repair")
+            return True
+
+    def _poll_once(self):
         # active ssh died on its own -> clean up + revert
         if self.connecting:
             return True  # _await_listener owns the connecting phase
@@ -321,12 +374,31 @@ class Manager:
             alive = self.proc is not None and self.proc.poll() is None \
                 and (t is not None and port_open("127.0.0.1", t["socks_port"]))
             if not alive:
+                proc_dead = self.proc is None or self.proc.poll() is not None
+                self.log(f"DROP {self.active_name}: ssh_dead={proc_dead} "
+                         f"socks_open={not proc_dead and port_open('127.0.0.1', t['socks_port'])}")
                 self.kill_proc()
                 self.revert_proxy()
                 dropped, self.active_name = self.active_name, None
                 self.notify(f"{dropped}: dropped", "ssh died; proxy reverted.")
                 self.refresh()
+            elif self.routing is not None \
+                    and self.routing.name == "transparent" \
+                    and not self.log_health():
+                # rules or helper vanished under us — stop rather than pretend
+                self.kill_proc()
+                self.revert_proxy()
+                dropped, self.active_name = self.active_name, None
+                self.notify(f"{dropped}: rules lost",
+                            "Transparent routing broke; tunnel stopped.")
+                self.refresh()
         return True
+
+    def log(self, msg):
+        """stdout is the tray's log file; timestamps make the up/down order
+        readable against netguard's own log."""
+        import datetime
+        print(f"[{datetime.datetime.now():%H:%M:%S}] {msg}", flush=True)
 
     def notify(self, summary, body=""):
         if not Notify or self.headless:
@@ -354,6 +426,11 @@ class Manager:
             mi.connect("activate", self._on_tray_toggle, t["name"])
             self.menu.append(mi)
         self.menu.append(Gtk.SeparatorMenuItem())
+        tm = Gtk.CheckMenuItem(label="Transparent (whole system)")
+        tm.set_active(bool(self.cfg.get("transparent")))  # before connect: no spurious toggle
+        tm.connect("toggled", self._on_transparent_toggled)
+        self.menu.append(tm)
+        self.menu.append(Gtk.SeparatorMenuItem())
         mgr = Gtk.MenuItem(label="Manage tunnels…")
         mgr.connect("activate", lambda _: self.show_window())
         self.menu.append(mgr)
@@ -369,6 +446,26 @@ class Manager:
 
     def _on_tray_toggle(self, _, name):
         self.stop() if self.is_active(name) else self.start(name)
+
+    def _on_transparent_toggled(self, item):
+        want = item.get_active()
+        if want == bool(self.cfg.get("transparent")):
+            return
+        if want and not self.cfg.get("dns_server", "").strip():
+            self._error("Set a DNS server in Manage tunnels… first — "
+                        "transparent mode needs one to resolve names "
+                        "through the tunnel.")
+            item.set_active(False)
+            return
+        self.log(f"TOGGLE transparent -> {want}")
+        self.cfg["transparent"] = want
+        save_config(self.cfg)
+        # hot-swap: ssh and the SOCKS port are untouched, only delivery changes
+        if self.active_name and self.is_active(self.active_name):
+            t = self.by_name(self.active_name)
+            self.revert_proxy()
+            self.apply_proxy(t["socks_port"])
+        GLib.idle_add(self.refresh)  # deferred: refresh destroys this item
 
     def show_about(self, *_):
         d = Gtk.AboutDialog(transient_for=self.window, modal=True)
@@ -410,6 +507,16 @@ class Manager:
         self.window.set_border_width(8)
         self.window.connect("delete-event", lambda *a: self.window.hide() or True)
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        dns_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        dns_row.pack_start(
+            Gtk.Label(label="DNS server (transparent mode)", xalign=0),
+            False, False, 0)
+        self.dns_entry = Gtk.Entry()
+        self.dns_entry.set_text(self.cfg.get("dns_server", ""))
+        self.dns_entry.set_placeholder_text("resolver reached through the tunnel")
+        self.dns_entry.connect("changed", self._on_dns_changed)
+        dns_row.pack_start(self.dns_entry, True, True, 0)
+        outer.pack_start(dns_row, False, False, 0)
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_vexpand(True)
@@ -456,6 +563,10 @@ class Manager:
 
     def _on_row_toggle(self, _, name):
         self.stop() if self.is_active(name) else self.start(name)
+
+    def _on_dns_changed(self, entry):
+        self.cfg["dns_server"] = entry.get_text().strip()
+        save_config(self.cfg)
 
     def _delete(self, name):
         if self.is_active(name):
@@ -723,6 +834,8 @@ def main():
     import sys
     if "--selftest" in sys.argv:
         raise SystemExit(selftest())
+    if "--repair" in sys.argv:
+        raise SystemExit(repair())
     if "--install-desktop" in sys.argv:
         install_desktop(autostart="--autostart" in sys.argv)
         return

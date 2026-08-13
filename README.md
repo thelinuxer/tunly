@@ -25,7 +25,46 @@ it drives the system proxy and is reverted on stop, drop, or quit.
 - **Any auth** — ssh-agent, a specific key file, or password (GNOME keyring / prompt;
   never written to disk).
 - **Self-healing** — health-checks the tunnel and cleans up if ssh dies underneath.
-- **No daemons, no root** — a single Python/GTK process running as you.
+- **Transparent mode** *(optional)* — route **everything** through the tunnel with
+  iptables, not just apps that read the proxy setting. See below.
+- **No daemons, no root** — a single Python/GTK process running as you. (Transparent
+  mode is the one exception: it needs root for the firewall rules.)
+
+## Proxy mode vs transparent mode
+
+By default Tunly sets the GNOME system proxy. That only covers apps that bother to
+read it — Firefox, Chrome, GTK apps. `curl`, `yt-dlp`, `git`, `apt` and most CLI
+tools ignore it and leave over your real IP.
+
+Tick **Transparent (whole system)** in the tray to force *all* outbound TCP through
+the tunnel with iptables. No per-app configuration, nothing to opt in.
+
+|  | Proxy mode (default) | Transparent mode |
+|---|---|---|
+| Covers | apps that read the proxy setting | everything (TCP) |
+| Root | no | yes, once per session via polkit |
+| DNS | app-dependent | forced through the tunnel |
+| UDP | direct | rejected, so QUIC falls back to TCP |
+| ICMP (`ping`) | works | blocked outright, LAN included |
+| IPv6 | direct | rejected, so apps fall back to tunnelled v4 |
+
+> **`ping` will not work while transparent mode is on** — that is the kill switch,
+> not a broken network. ICMP cannot ride a SOCKS5 TCP tunnel, so it is rejected
+> rather than allowed out over your real IP. Use `curl` to test connectivity.
+
+Transparent mode is **fail-closed**: while it is on, traffic that cannot go through
+the tunnel is rejected rather than leaked. If Tunly dies — even by `SIGKILL` — the
+privileged helper notices its pipe close and removes every rule on its own. Rules
+are never persisted, so a reboot also clears them. To clean up by hand:
+
+```bash
+tunly --repair
+```
+
+It also needs a **DNS server** (set it in *Manage tunnels…*, default `1.1.1.1`),
+because your local resolver's upstream is usually a private router address that is
+unreachable from the exit node. One consequence worth knowing: split-horizon DNS
+from a corporate resolver stops resolving while transparent mode is on.
 
 **[📖 Full user guide](docs/GUIDE.md)** — first run, auth setup, troubleshooting.
 

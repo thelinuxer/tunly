@@ -6,10 +6,12 @@ pkgdesc="GNOME tray applet for SSH SOCKS5 tunnels — one click up, system proxy
 arch=('any')
 url="https://github.com/thelinuxer/tunly"
 license=('MIT')
-depends=('python' 'python-gobject' 'gtk3' 'libayatana-appindicator' 'openssh')
+depends=('python' 'python-gobject' 'gtk3' 'libayatana-appindicator' 'openssh'
+         'iptables' 'polkit')
 optdepends=('libnotify: desktop notifications'
             'libsecret: remember passwords in the keyring'
-            'sshpass: alternative password delivery')
+            'sshpass: alternative password delivery'
+            'conntrack-tools: force existing connections through the tunnel')
 makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/thelinuxer/tunly/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('SKIP')

@@ -12,8 +12,7 @@ RUNPKG  = $(PREFIX)/share/tunly
 
 install:
 	install -d $(PKGDIR)/tunly/data
-	install -m644 src/tunly/__init__.py $(PKGDIR)/tunly/
-	install -m644 src/tunly/__main__.py $(PKGDIR)/tunly/
+	install -m644 src/tunly/*.py $(PKGDIR)/tunly/
 	install -m644 src/tunly/data/* $(PKGDIR)/tunly/data/
 	install -d $(BINDIR)
 	sed 's#@PKGDIR@#$(RUNPKG)#' packaging/tunly.in > $(BINDIR)/tunly
