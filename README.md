@@ -108,8 +108,8 @@ with key-only auth (`PasswordAuthentication no`) and a firewall on port 22.
 ### Quick install (Debian/Ubuntu)
 
 ```bash
-wget https://github.com/thelinuxer/tunly/releases/latest/download/tunly_0.1.4_all.deb
-sudo apt install ./tunly_0.1.4_all.deb
+wget https://github.com/thelinuxer/tunly/releases/latest/download/tunly_0.3.1_all.deb
+sudo apt install ./tunly_0.3.1_all.deb
 ```
 
 ## Requirements

@@ -1,13 +1,13 @@
 # Maintainer: Ahmed Toulan <thelinuxer@gmail.com>
 pkgname=tunly
-pkgver=0.1.4
+pkgver=0.3.1
 pkgrel=1
 pkgdesc="GNOME tray applet for SSH SOCKS5 tunnels — one click up, system proxy follows"
 arch=('any')
 url="https://github.com/thelinuxer/tunly"
 license=('MIT')
 depends=('python' 'python-gobject' 'gtk3' 'libayatana-appindicator' 'openssh'
-         'iptables' 'polkit')
+         'iptables' 'polkit' 'glib2')
 optdepends=('libnotify: desktop notifications'
             'libsecret: remember passwords in the keyring'
             'sshpass: alternative password delivery'

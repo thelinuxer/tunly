@@ -2,6 +2,25 @@
 
 All notable changes to Tunly are documented here.
 
+## 0.3.1 — 2026-08-16
+
+### The desktop no longer claims you are offline in transparent mode
+
+GNOME showed the network icon with a "?" and "no internet" the whole time
+transparent mode was on, however well the tunnel was working.
+
+NetworkManager's connectivity probe binds its socket to the network device.
+Transparent mode's REDIRECT rewrites the destination to `127.0.0.1`, and a
+loopback delivery is exactly what a socket pinned to the wifi device cannot
+make, so every probe timed out. No probe URL could have fixed it — the socket
+is what fails, not the endpoint.
+
+Tunly now turns the connectivity check off while transparent mode is up and
+restores it on the way down, including on crash, SIGKILL of the parent, and
+`tunly --repair`. A check you had already disabled yourself stays disabled.
+Nothing is written to `/etc`: the setting is runtime state, so even a restore
+that never runs heals when NetworkManager next restarts.
+
 ## 0.3.0 — 2026-08-12
 
 ### Transparent mode

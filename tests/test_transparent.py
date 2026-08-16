@@ -12,6 +12,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from tunly import netfilter  # noqa: E402
 from tunly.netfilter import RuleError, up_commands, teardown_plan  # noqa: E402
 from tunly import redirector  # noqa: E402
+from tunly import nmcheck  # noqa: E402
+from tunly import netguard  # noqa: E402
 
 
 def index_of(cmds, *needles):
@@ -349,6 +351,115 @@ class TestBackendResilience:
 
     def test_down_survives_malformed_reply(self):
         self._backend("garbage\n").down()  # must not raise
+
+
+class TestConnectivityCheckCommands:
+    def test_get_reads_the_networkmanager_property(self):
+        joined = " ".join(nmcheck.get_cmd())
+        assert "org.freedesktop.DBus.Properties.Get" in joined
+        assert nmcheck.IFACE in joined
+        assert nmcheck.PROP in joined
+
+    def test_set_wraps_the_value_as_a_variant(self):
+        assert "<false>" in nmcheck.set_cmd(False)
+        assert "<true>" in nmcheck.set_cmd(True)
+
+    def test_every_call_carries_a_timeout(self):
+        """A wedged NetworkManager must never hold up teardown."""
+        for cmd in (nmcheck.get_cmd(), nmcheck.set_cmd(True)):
+            assert "--timeout" in cmd
+
+    def test_parses_both_states(self):
+        assert nmcheck.parse("(<true>,)\n") is True
+        assert nmcheck.parse("(<false>,)\n") is False
+
+    def test_rejects_unparsable_reply(self):
+        with pytest.raises(ValueError):
+            nmcheck.parse("some gdbus error")
+
+
+class TestConnectivityCheckRestore:
+    """The property is runtime-only, so the worst a bug here costs is a
+    misleading tray icon until NetworkManager restarts. It still has to be
+    right: silently leaving a user's check off is a change they never asked
+    for."""
+
+    class Bus(list):
+        """Records every argv netguard runs, and answers the Get however the
+        test wants."""
+        reply = "(<true>,)\n"
+        rc = 0
+
+        def run(self, cmd, quiet=False):
+            self.append(cmd)
+            is_get = "Get" in " ".join(cmd)
+            return subprocess.CompletedProcess(
+                cmd, self.rc if is_get else 0,
+                self.reply if is_get else "", "")
+
+    @pytest.fixture
+    def calls(self, monkeypatch):
+        bus = self.Bus()
+        monkeypatch.setattr(netguard, "_run", bus.run)
+        monkeypatch.setattr(netguard.shutil, "which", lambda _: "/usr/bin/gdbus")
+        monkeypatch.setattr(netguard, "_nm_prev", None)
+        return bus
+
+    def sets(self, calls):
+        return [c for c in calls if "Set" in " ".join(c)]
+
+    def test_disable_turns_the_check_off(self, calls):
+        netguard.nm_check_disable()
+        assert "<false>" in self.sets(calls)[-1]
+
+    def test_restore_puts_the_previous_value_back(self, calls):
+        netguard.nm_check_disable()
+        netguard.nm_check_restore()
+        assert "<true>" in self.sets(calls)[-1]
+
+    def test_restore_respects_a_check_the_user_had_already_disabled(self, calls):
+        calls.reply = "(<false>,)\n"
+        netguard.nm_check_disable()
+        netguard.nm_check_restore()
+        assert "<false>" in self.sets(calls)[-1]
+
+    def test_restore_without_a_stash_touches_nothing(self, calls):
+        netguard.nm_check_restore()
+        assert self.sets(calls) == []
+
+    def test_repair_re_enables_without_a_stash(self, calls):
+        netguard.nm_check_restore(force=True)
+        assert "<true>" in self.sets(calls)[-1]
+
+    def test_restore_runs_once(self, calls):
+        netguard.nm_check_disable()
+        netguard.nm_check_restore()
+        netguard.nm_check_restore()
+        assert len(self.sets(calls)) == 2  # the disable, then one restore
+
+    def test_unreadable_property_is_left_alone(self, calls):
+        calls.rc = 1
+        netguard.nm_check_disable()
+        assert self.sets(calls) == []
+
+    def test_absent_gdbus_is_not_fatal(self, calls, monkeypatch):
+        monkeypatch.setattr(netguard.shutil, "which", lambda _: None)
+        netguard.nm_check_disable()
+        netguard.nm_check_restore()
+        assert self.sets(calls) == []
+
+    def test_teardown_restores(self, calls, monkeypatch):
+        monkeypatch.setattr(netguard, "_teardown_rules", lambda attempts: True)
+        netguard.nm_check_disable()
+        netguard.teardown()
+        assert "<true>" in self.sets(calls)[-1]
+
+    def test_teardown_restores_even_when_rules_are_stranded(self, calls,
+                                                            monkeypatch):
+        monkeypatch.setattr(netguard, "_teardown_rules", lambda attempts: False)
+        netguard.nm_check_disable()
+        assert netguard.teardown() is False
+        assert "<true>" in self.sets(calls)[-1]
 
 
 # ---- real iptables, inside a throwaway network namespace ----

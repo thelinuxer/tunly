@@ -22,8 +22,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tunly.netfilter import (  # noqa: E402
     CONNTRACK_FLUSH, RuleError, up_commands, teardown_plan, check_plan,
 )
+from tunly import nmcheck  # noqa: E402
 
 MAX_JUMP_UNHOOK = 16  # a crash can stack duplicate jumps; bound the unhook loop
+
+_nm_prev = None  # connectivity-check state before we touched it, once we have
 
 
 def log(msg):
@@ -57,7 +60,7 @@ def _teardown_pass():
     return leftovers
 
 
-def teardown(attempts=4):
+def _teardown_rules(attempts):
     """Idempotent, and retried: a single sweep can lose to xtables lock
     contention, which is exactly how rules get stranded."""
     leftovers = []
@@ -69,6 +72,14 @@ def teardown(attempts=4):
         time.sleep(0.5)
     log(f"TEARDOWN INCOMPLETE, still present: {leftovers}")
     return False
+
+
+def teardown(attempts=4, force_nm=False):
+    """The rules come down first: restoring the check any earlier just invites
+    a probe through a ruleset that is still redirecting."""
+    ok = _teardown_rules(attempts)
+    nm_check_restore(force=force_nm)
+    return ok
 
 
 def chains_intact():
@@ -91,7 +102,50 @@ def bring_up(msg):
             return {"ok": False,
                     "error": f"{' '.join(cmd)}: {r.stderr.strip()}"}
     flush_conntrack()
+    nm_check_disable()
     return {"ok": True}
+
+
+def _nm_set(enabled):
+    r = _run(nmcheck.set_cmd(enabled), quiet=True)
+    if r.returncode != 0:
+        log(f"NM connectivity check: {enabled} failed: {r.stderr.strip()}")
+    return r.returncode == 0
+
+
+def nm_check_disable():
+    """The probe cannot survive the redirect — it binds to the device, and the
+    rewritten 127.0.0.1 destination is unreachable that way — so it would sit
+    there timing out and painting the desktop offline. Cosmetic either way,
+    which is why nothing here is fatal: the tunnel is what matters."""
+    global _nm_prev
+    if shutil.which(nmcheck.GDBUS) is None:
+        log("gdbus absent — desktop will report no internet while tunneled")
+        return
+    r = _run(nmcheck.get_cmd(), quiet=True)
+    if r.returncode != 0:
+        log("NM connectivity check unreadable — leaving it alone")
+        return
+    try:
+        prev = nmcheck.parse(r.stdout)
+    except ValueError as e:
+        log(f"NM connectivity check: {e}")
+        return
+    if _nm_set(False):
+        _nm_prev = prev
+
+
+def nm_check_restore(force=False):
+    """Only ever restores what we stashed, so a check the user had already
+    turned off stays off. `force` is --repair, where the stash is gone with
+    the process that made it and enabled is the one sane guess."""
+    global _nm_prev
+    if _nm_prev is None and not force:
+        return
+    if shutil.which(nmcheck.GDBUS) is None:
+        return
+    _nm_set(True if _nm_prev is None else _nm_prev)
+    _nm_prev = None
 
 
 def flush_conntrack():
@@ -126,7 +180,7 @@ def main():
         sys.stderr.write("netguard must run as root\n")
         return 1
     if "--teardown" in sys.argv:  # tunly --repair
-        teardown()
+        teardown(force_nm=True)
         return 0
 
     def _bail(*_):
